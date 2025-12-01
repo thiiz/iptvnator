@@ -93,6 +93,7 @@
         </div>
         <app-season-container
             [seasons]="item.episodes"
+            [viewedEpisodeIds]="viewedEpisodeIds()"
             (episodeClicked)="playEpisode($event)"
         />
     </div>

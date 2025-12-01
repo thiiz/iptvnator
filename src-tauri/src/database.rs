@@ -72,5 +72,13 @@ pub fn get_migrations() -> Vec<Migration> {
             CREATE INDEX IF NOT EXISTS idx_content_xtream ON content(xtream_id);
             CREATE INDEX IF NOT EXISTS idx_categories_type ON categories(type);
         ",
+    },
+    Migration {
+        version: 2,
+        description: "Add viewed_episodes column to playlists",
+        kind: MigrationKind::Up,
+        sql: "
+            ALTER TABLE playlists ADD COLUMN viewed_episodes TEXT DEFAULT '{}';
+        ",
     }]
 }

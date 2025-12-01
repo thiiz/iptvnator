@@ -13,8 +13,13 @@ import { XtreamSerieEpisode } from '../../../../shared/xtream-serie-details.inte
 })
 export class SeasonContainerComponent {
     readonly seasons = input.required<Record<string, XtreamSerieEpisode[]>>();
+    readonly viewedEpisodeIds = input<Set<string>>(new Set());
 
     @Output() episodeClicked = new EventEmitter<any>();
+
+    isEpisodeViewed(episodeId: string): boolean {
+        return this.viewedEpisodeIds().has(episodeId);
+    }
 
     selectedSeason: string;
 

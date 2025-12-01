@@ -18,7 +18,14 @@
         }
     } @else {
         @for (episode of seasons()[selectedSeason]; track $index) {
-            <mat-card class="episode-item" (click)="selectEpisode(episode)">
+            <mat-card 
+                class="episode-item" 
+                [class.viewed]="isEpisodeViewed(episode.id)"
+                (click)="selectEpisode(episode)"
+            >
+                @if (isEpisodeViewed(episode.id)) {
+                    <mat-icon class="viewed-icon">check_circle</mat-icon>
+                }
                 @if (episode.info?.movie_image) {
                     <mat-card-content
                         ><img
