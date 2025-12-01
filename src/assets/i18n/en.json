@@ -335,5 +335,10 @@
     "DOWN_CHANNEL": "Down channel",
     "HEADER": "IPTVNator Remote Control",
     "FOOTER": "IPTVNator Remote Control"
-  }
+  },
+  "PLAYER": {
+    "NEXT_EPISODE_IN": "Next episode in",
+    "PLAY_NOW": "Play now"
+  },
+  "CANCEL": "Cancel"
 }

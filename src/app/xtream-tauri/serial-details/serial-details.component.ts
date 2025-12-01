@@ -40,7 +40,8 @@ export class SerialDetailsComponent {
         this.xtreamStore.openPlayer(
             streamUrl,
             episode.title,
-            this.selectedItem().info.cover
+            this.selectedItem().info.cover,
+            episode
         );
     }
 

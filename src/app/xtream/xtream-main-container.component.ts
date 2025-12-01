@@ -384,8 +384,29 @@ export class XtreamMainContainerComponent implements OnInit {
         } else if (player === VideoPlayer.VLC) {
             this.dataService.sendIpcEvent(OPEN_VLC_PLAYER, { url: streamUrl });
         } else {
+            // Build series auto-play data
+            const serieDetails = this.vodDetails as XtreamSerieDetails;
+            let allEpisodes: XtreamSerieEpisode[] = [];
+            
+            if (serieDetails?.episodes) {
+                const seasonKeys = Object.keys(serieDetails.episodes).sort((a, b) => Number(a) - Number(b));
+                for (const seasonKey of seasonKeys) {
+                    const seasonEpisodes = serieDetails.episodes[seasonKey] || [];
+                    const sortedEpisodes = [...seasonEpisodes].sort((a, b) => a.episode_num - b.episode_num);
+                    allEpisodes.push(...sortedEpisodes);
+                }
+            }
+
             this.dialog.open(PlayerDialogComponent, {
-                data: { streamUrl, player, title: episode.title },
+                data: { 
+                    streamUrl, 
+                    title: episode.title,
+                    episodes: allEpisodes,
+                    currentEpisodeId: episode.id,
+                    onEpisodeChange: (ep: XtreamSerieEpisode) => {
+                        return `${serverUrl}/series/${username}/${password}/${ep.id}.${ep.container_extension}`;
+                    },
+                },
                 width: '80%',
                 maxWidth: '1200px',
                 maxHeight: '90vh',

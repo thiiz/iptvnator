@@ -831,15 +831,42 @@ export const XtreamStore = signalStore(
                 openPlayer(
                     streamUrl: string,
                     title: string,
-                    thumbnail: string = null
+                    thumbnail: string = null,
+                    episode?: XtreamSerieEpisode
                 ) {
+                    const isSeries = store.selectedContentType() === 'series';
+                    const selectedItem = store.selectedItem() as XtreamSerieDetails;
+                    
+                    // Build series auto-play data if this is a series episode
+                    let seriesData = undefined;
+                    if (isSeries && selectedItem?.episodes && episode) {
+                        // Flatten all episodes from all seasons into a single array, sorted by season and episode number
+                        const allEpisodes: XtreamSerieEpisode[] = [];
+                        const seasonKeys = Object.keys(selectedItem.episodes).sort((a, b) => Number(a) - Number(b));
+                        for (const seasonKey of seasonKeys) {
+                            const seasonEpisodes = selectedItem.episodes[seasonKey] || [];
+                            const sortedEpisodes = [...seasonEpisodes].sort((a, b) => a.episode_num - b.episode_num);
+                            allEpisodes.push(...sortedEpisodes);
+                        }
+
+                        seriesData = {
+                            episodes: allEpisodes,
+                            currentEpisodeId: episode.id,
+                            onEpisodeChange: (ep: XtreamSerieEpisode) => {
+                                const { serverUrl, username, password } = store.currentPlaylist();
+                                return `${serverUrl}/series/${username}/${password}/${ep.id}.${ep.container_extension}`;
+                            },
+                        };
+                    }
+
                     playerService.openPlayer(
                         streamUrl,
                         title,
                         thumbnail,
                         localStorage.getItem('hideExternalInfoDialog') ===
                             'true',
-                        store.selectedContentType() === 'live'
+                        store.selectedContentType() === 'live',
+                        seriesData
                     );
                 },
                 addToFavorites(item: any) {

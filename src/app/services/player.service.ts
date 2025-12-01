@@ -1,6 +1,7 @@
 import { Injectable, inject } from '@angular/core';
 import { MatDialog } from '@angular/material/dialog';
 import { OPEN_MPV_PLAYER, OPEN_VLC_PLAYER } from '../../../shared/ipc-commands';
+import { XtreamSerieEpisode } from '../../../shared/xtream-serie-details.interface';
 import { VideoPlayer } from '../settings/settings.interface';
 import { ExternalPlayerInfoDialogComponent } from '../shared/components/external-player-info-dialog/external-player-info-dialog.component';
 import {
@@ -9,6 +10,12 @@ import {
 } from '../xtream-tauri/player-dialog/player-dialog.component';
 import { DataService } from './data.service';
 import { SettingsStore } from './settings-store.service';
+
+export interface SeriesAutoPlayData {
+    episodes: XtreamSerieEpisode[];
+    currentEpisodeId: string;
+    onEpisodeChange: (episode: XtreamSerieEpisode) => string;
+}
 
 @Injectable({
     providedIn: 'root',
@@ -23,7 +30,8 @@ export class PlayerService {
         title: string,
         thumbnail?: string,
         hideExternalInfoDialog = true,
-        isLiveContent = false
+        isLiveContent = false,
+        seriesData?: SeriesAutoPlayData
     ) {
         const player = this.settingsStore.player() ?? VideoPlayer.VideoJs;
 
@@ -51,7 +59,13 @@ export class PlayerService {
             this.dialog.open<PlayerDialogComponent, PlayerDialogData>(
                 PlayerDialogComponent,
                 {
-                    data: { streamUrl, title },
+                    data: { 
+                        streamUrl, 
+                        title,
+                        episodes: seriesData?.episodes,
+                        currentEpisodeId: seriesData?.currentEpisodeId,
+                        onEpisodeChange: seriesData?.onEpisodeChange,
+                    },
                     width: '80%',
                     maxWidth: '1200px',
                     maxHeight: '90vh',

@@ -1,5 +1,7 @@
 import {
     Component,
+    EventEmitter,
+    Output,
     Signal,
     ViewEncapsulation,
     effect,
@@ -9,11 +11,16 @@ import {
 import { toSignal } from '@angular/core/rxjs-interop';
 import { StorageMap } from '@ngx-pwa/local-storage';
 import { getExtensionFromUrl } from '../../../../shared/playlist.utils';
-import { ArtPlayerComponent } from '../../player/components/art-player/art-player.component';
+import { ArtPlayerComponent, AutoPlayNextEpisodeEvent } from '../../player/components/art-player/art-player.component';
 import { HtmlVideoPlayerComponent } from '../../player/components/html-video-player/html-video-player.component';
 import { VjsPlayerComponent } from '../../player/components/vjs-player/vjs-player.component';
 import { Settings, VideoPlayer } from '../../settings/settings.interface';
 import { STORE_KEY } from '../../shared/enums/store-keys.enum';
+
+export interface TimeUpdateEvent {
+    currentTime: number;
+    duration: number;
+}
 
 @Component({
     selector: 'app-web-player-view',
@@ -26,6 +33,13 @@ export class WebPlayerViewComponent {
     storage = inject(StorageMap);
 
     streamUrl = input.required<string>();
+    enableAutoPlayNext = input<boolean>(false);
+    autoPlayNextLabel = input<string>('Next episode in');
+    autoPlayCancelLabel = input<string>('Cancel');
+    autoPlayNowLabel = input<string>('Play now');
+
+    @Output() timeUpdate = new EventEmitter<TimeUpdateEvent>();
+    @Output() autoPlayNext = new EventEmitter<AutoPlayNextEpisodeEvent>();
 
     settings = toSignal(
         this.storage.get(STORE_KEY.Settings)
@@ -61,5 +75,13 @@ export class WebPlayerViewComponent {
         this.channel = {
             url: streamUrl,
         };
+    }
+
+    onTimeUpdate(event: TimeUpdateEvent) {
+        this.timeUpdate.emit(event);
+    }
+
+    onAutoPlayNext(event: AutoPlayNextEpisodeEvent) {
+        this.autoPlayNext.emit(event);
     }
 }

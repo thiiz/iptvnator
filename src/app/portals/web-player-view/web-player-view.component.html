@@ -3,7 +3,17 @@
 } @else if (player === 'html5') {
     <app-html-video-player [channel]="channel" />
 } @else if (player === 'artplayer') {
-    <app-art-player [channel]="channel" [volume]="1" [showCaptions]="false" />
+    <app-art-player 
+        [channel]="channel" 
+        [volume]="1" 
+        [showCaptions]="false"
+        [enableAutoPlayNext]="enableAutoPlayNext()"
+        [autoPlayNextLabel]="autoPlayNextLabel()"
+        [autoPlayCancelLabel]="autoPlayCancelLabel()"
+        [autoPlayNowLabel]="autoPlayNowLabel()"
+        (timeUpdate)="onTimeUpdate($event)"
+        (autoPlayNext)="onAutoPlayNext($event)"
+    />
 } @else {
     <app-vjs-player [options]="vjsOptions" />
 }

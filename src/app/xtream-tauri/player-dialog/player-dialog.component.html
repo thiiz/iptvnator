@@ -1,6 +1,13 @@
 <h2 mat-dialog-title>{{ title }}</h2>
 <mat-dialog-content class="content">
-    <app-web-player-view [streamUrl]="streamUrl" />
+    <app-web-player-view 
+        [streamUrl]="streamUrl"
+        [enableAutoPlayNext]="enableAutoPlayNext"
+        [autoPlayNextLabel]="autoPlayNextLabel"
+        [autoPlayCancelLabel]="autoPlayCancelLabel"
+        [autoPlayNowLabel]="autoPlayNowLabel"
+        (autoPlayNext)="onAutoPlayNext($event)"
+    />
     <mat-form-field class="link-input">
         <input
             matInput

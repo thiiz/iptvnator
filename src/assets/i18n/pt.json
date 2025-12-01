@@ -335,5 +335,10 @@
     "DOWN_CHANNEL": "Canal abaixo",
     "HEADER": "Controle Remoto IPTVNator",
     "FOOTER": "Controle Remoto IPTVNator"
-  }
+  },
+  "PLAYER": {
+    "NEXT_EPISODE_IN": "Próximo episódio em",
+    "PLAY_NOW": "Reproduzir agora"
+  },
+  "CANCEL": "Cancelar"
 }
