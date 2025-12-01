@@ -31,6 +31,7 @@ import { PlayerService } from '../services/player.service';
 import { SettingsStore } from '../services/settings-store.service';
 import { selectActivePlaylist } from '../state/selectors';
 import { XtreamAccountInfo } from './account-info/account-info.interface';
+import { ViewedEpisodesService } from './services/viewed-episodes.service';
 import { withFavorites } from './with-favorites.feature';
 import { withRecentItems } from './with-recent-items';
 import { XtreamState } from './xtream-state';
@@ -60,6 +61,7 @@ const initialState: XtreamState = {
     portalStatus: 'unavailable',
     globalSearchResults: [],
     streamUrl: null,
+    viewedEpisodeIds: new Set<string>(),
 };
 
 /** to decode epg */
@@ -182,7 +184,8 @@ export const XtreamStore = signalStore(
             dbService = inject(DatabaseService),
             oldStore = inject(Store),
             settingsStore = inject(SettingsStore),
-            playerService = inject(PlayerService)
+            playerService = inject(PlayerService),
+            viewedEpisodesService = inject(ViewedEpisodesService)
         ) => {
             const fetchCategories = (
                 action: XtreamCodeActions,
@@ -849,11 +852,30 @@ export const XtreamStore = signalStore(
                             allEpisodes.push(...sortedEpisodes);
                         }
 
+                        const seriesId = (selectedItem as any).series_id;
                         seriesData = {
                             episodes: allEpisodes,
                             currentEpisodeId: episode.id,
                             onEpisodeChange: (ep: XtreamSerieEpisode) => {
-                                const { serverUrl, username, password } = store.currentPlaylist();
+                                const playlist = store.currentPlaylist();
+                                const { serverUrl, username, password } = playlist;
+                                
+                                // Mark episode as viewed
+                                if (seriesId) {
+                                    viewedEpisodesService.markAsViewed({
+                                        series_id: Number(seriesId),
+                                        episode_id: ep.id,
+                                        season_number: ep.season,
+                                        episode_number: ep.episode_num,
+                                        playlist_id: playlist.id,
+                                    });
+                                    
+                                    // Update store state
+                                    const currentViewed = new Set(store.viewedEpisodeIds());
+                                    currentViewed.add(ep.id);
+                                    patchState(store, { viewedEpisodeIds: currentViewed });
+                                }
+                                
                                 return `${serverUrl}/series/${username}/${password}/${ep.id}.${ep.container_extension}`;
                             },
                         };
@@ -868,6 +890,21 @@ export const XtreamStore = signalStore(
                         store.selectedContentType() === 'live',
                         seriesData
                     );
+                },
+                async loadViewedEpisodes(seriesId: number) {
+                    const playlistId = store.currentPlaylist()?.id;
+                    if (!playlistId) return;
+                    
+                    const viewedIds = await viewedEpisodesService.getViewedEpisodeIds(
+                        seriesId,
+                        playlistId
+                    );
+                    patchState(store, { viewedEpisodeIds: viewedIds });
+                },
+                addViewedEpisode(episodeId: string) {
+                    const currentViewed = new Set(store.viewedEpisodeIds());
+                    currentViewed.add(episodeId);
+                    patchState(store, { viewedEpisodeIds: currentViewed });
                 },
                 addToFavorites(item: any) {
                     console.log('not needed now', item);

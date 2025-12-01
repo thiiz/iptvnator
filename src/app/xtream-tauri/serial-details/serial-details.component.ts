@@ -1,4 +1,4 @@
-import { Component, inject, signal } from '@angular/core';
+import { Component, inject } from '@angular/core';
 import { MatButton } from '@angular/material/button';
 import { MatIcon } from '@angular/material/icon';
 import { ActivatedRoute } from '@angular/router';
@@ -22,7 +22,7 @@ export class SerialDetailsComponent {
     readonly selectedItem = this.xtreamStore.selectedItem;
     readonly selectedContentType = this.xtreamStore.selectedContentType;
     readonly isFavorite = this.xtreamStore.isFavorite;
-    readonly viewedEpisodeIds = signal<Set<string>>(new Set());
+    readonly viewedEpisodeIds = this.xtreamStore.viewedEpisodeIds;
 
     ngOnInit(): void {
         const { categoryId, serialId } = this.route.snapshot.params;
@@ -34,16 +34,7 @@ export class SerialDetailsComponent {
             serialId,
             this.xtreamStore.currentPlaylist().id
         );
-        this.loadViewedEpisodes(serialId);
-    }
-
-    private async loadViewedEpisodes(serialId: number): Promise<void> {
-        const playlistId = this.xtreamStore.currentPlaylist().id;
-        const viewedIds = await this.viewedEpisodesService.getViewedEpisodeIds(
-            serialId,
-            playlistId
-        );
-        this.viewedEpisodeIds.set(viewedIds);
+        this.xtreamStore.loadViewedEpisodes(serialId);
     }
 
     playEpisode(episode: XtreamSerieEpisode) {
@@ -80,14 +71,8 @@ export class SerialDetailsComponent {
             playlist_id: playlistId,
         });
 
-        // Update local state
-        const currentViewed = this.viewedEpisodeIds();
-        currentViewed.add(episode.id);
-        this.viewedEpisodeIds.set(new Set(currentViewed));
-    }
-
-    isEpisodeViewed(episodeId: string): boolean {
-        return this.viewedEpisodeIds().has(episodeId);
+        // Update store state
+        this.xtreamStore.addViewedEpisode(episode.id);
     }
 
     toggleFavorite() {

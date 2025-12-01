@@ -42,4 +42,5 @@ export interface XtreamState {
     portalStatus: PortalStatusType;
     globalSearchResults: GlobalSearchResult[];
     streamUrl: string;
+    viewedEpisodeIds: Set<string>;
 }
