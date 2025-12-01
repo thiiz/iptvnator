@@ -13,6 +13,7 @@ import { Channel } from '../../../../../shared/channel.interface';
 import { CHANNEL_SET_USER_AGENT } from '../../../../../shared/ipc-commands';
 import { getExtensionFromUrl } from '../../../../../shared/playlist.utils';
 import { DataService } from '../../../services/data.service';
+import { getCurrentWindow } from '@tauri-apps/api/window';
 
 /**
  * This component contains the implementation of HTML5 based video player
@@ -43,10 +44,53 @@ export class HtmlVideoPlayerComponent implements OnInit, OnChanges, OnDestroy {
     /** Captions/subtitles indicator */
     @Input() showCaptions!: boolean;
 
+    /** Event handlers para cleanup */
+    private fullscreenChangeHandler: (() => void) | null = null;
+    private webkitFullscreenChangeHandler: (() => void) | null = null;
+
     ngOnInit() {
         this.videoPlayer.nativeElement.addEventListener('volumechange', () => {
             this.onVolumeChange();
         });
+
+        // Integração com fullscreen do Tauri para o HTML5 video player
+        this.fullscreenChangeHandler = async () => {
+            try {
+                const appWindow = getCurrentWindow();
+                const isFullscreen =
+                    !!document.fullscreenElement ||
+                    !!(this.videoPlayer.nativeElement as any)
+                        .webkitDisplayingFullscreen;
+                await appWindow.setFullscreen(isFullscreen);
+            } catch (error) {
+                console.error('Erro ao alternar fullscreen do Tauri:', error);
+            }
+        };
+
+        this.videoPlayer.nativeElement.addEventListener(
+            'fullscreenchange',
+            this.fullscreenChangeHandler
+        );
+
+        // Listener para Safari/WebKit
+        this.webkitFullscreenChangeHandler = async () => {
+            try {
+                const appWindow = getCurrentWindow();
+                const isFullscreen = !!(this.videoPlayer.nativeElement as any)
+                    .webkitDisplayingFullscreen;
+                await appWindow.setFullscreen(isFullscreen);
+            } catch (error) {
+                console.error(
+                    'Erro ao alternar fullscreen do Tauri (webkit):',
+                    error
+                );
+            }
+        };
+
+        this.videoPlayer.nativeElement.addEventListener(
+            'webkitfullscreenchange',
+            this.webkitFullscreenChangeHandler
+        );
     }
 
     /**
@@ -168,7 +212,7 @@ export class HtmlVideoPlayerComponent implements OnInit, OnChanges, OnDestroy {
                         this.disableCaptions();
                     }
                 })
-                .catch(() => {});
+                .catch(() => { });
         }
     }
 
@@ -189,6 +233,21 @@ export class HtmlVideoPlayerComponent implements OnInit, OnChanges, OnDestroy {
             'volumechange',
             this.onVolumeChange
         );
+
+        // Remove Tauri fullscreen listeners
+        if (this.fullscreenChangeHandler) {
+            this.videoPlayer.nativeElement.removeEventListener(
+                'fullscreenchange',
+                this.fullscreenChangeHandler
+            );
+        }
+        if (this.webkitFullscreenChangeHandler) {
+            this.videoPlayer.nativeElement.removeEventListener(
+                'webkitfullscreenchange',
+                this.webkitFullscreenChangeHandler
+            );
+        }
+
         if (this.hls) {
             this.hls.destroy();
         }

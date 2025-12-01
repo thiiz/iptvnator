@@ -10,6 +10,7 @@ import {
 import Artplayer from 'artplayer';
 import Hls from 'hls.js';
 import { Channel } from '../../../../../shared/channel.interface';
+import { getCurrentWindow } from '@tauri-apps/api/window';
 
 Artplayer.AUTO_PLAYBACK_TIMEOUT = 10000;
 
@@ -38,7 +39,7 @@ export class ArtPlayerComponent implements OnInit, OnDestroy, OnChanges {
 
     private player: Artplayer;
 
-    constructor(private elementRef: ElementRef) {}
+    constructor(private elementRef: ElementRef) { }
 
     ngOnInit(): void {
         this.initPlayer();
@@ -46,6 +47,10 @@ export class ArtPlayerComponent implements OnInit, OnDestroy, OnChanges {
 
     ngOnDestroy(): void {
         if (this.player) {
+            // Cleanup do listener do Tauri
+            if ((this.player as any).__tauriUnlisten) {
+                (this.player as any).__tauriUnlisten();
+            }
             this.player.destroy();
         }
     }
@@ -59,7 +64,7 @@ export class ArtPlayerComponent implements OnInit, OnDestroy, OnChanges {
         }
     }
 
-    private initPlayer(): void {
+    private async initPlayer(): Promise<void> {
         const el = this.elementRef.nativeElement.querySelector(
             '.artplayer-container'
         );
@@ -81,7 +86,7 @@ export class ArtPlayerComponent implements OnInit, OnDestroy, OnChanges {
             playbackRate: true,
             aspectRatio: true,
             fullscreen: true,
-            fullscreenWeb: true,
+            fullscreenWeb: false, // Desabilita fullscreen web pra usar o do Tauri
             playsInline: true,
             airplay: true,
             backdrop: true,
@@ -110,6 +115,32 @@ export class ArtPlayerComponent implements OnInit, OnDestroy, OnChanges {
                 },
             },
         });
+
+        // Integração com fullscreen do Tauri
+        this.player.on('fullscreen', async (isFullscreen: boolean) => {
+            try {
+                const appWindow = getCurrentWindow();
+                await appWindow.setFullscreen(isFullscreen);
+            } catch (error) {
+                console.error('Erro ao alternar fullscreen do Tauri:', error);
+            }
+        });
+
+        // Escuta mudanças de fullscreen da janela Tauri (ex: F11 ou ESC)
+        try {
+            const appWindow = getCurrentWindow();
+            const unlisten = await appWindow.onResized(async () => {
+                const isFullscreen = await appWindow.isFullscreen();
+                if (this.player && this.player.fullscreen !== isFullscreen) {
+                    this.player.fullscreen = isFullscreen;
+                }
+            });
+
+            // Guardar unlisten para cleanup no destroy
+            (this.player as any).__tauriUnlisten = unlisten;
+        } catch (error) {
+            console.error('Erro ao monitorar fullscreen do Tauri:', error);
+        }
     }
 
     private getVideoType(url: string): string {

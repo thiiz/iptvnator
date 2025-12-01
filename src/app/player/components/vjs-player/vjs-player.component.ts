@@ -13,6 +13,7 @@ import '@yangkghjh/videojs-aspect-ratio-panel';
 import videoJs from 'video.js';
 import 'videojs-contrib-quality-levels';
 import 'videojs-hls-quality-selector';
+import { getCurrentWindow } from '@tauri-apps/api/window';
 
 /**
  * This component contains the implementation of video player that is based on video.js library
@@ -53,6 +54,20 @@ export class VjsPlayerComponent implements OnInit, OnChanges, OnDestroy {
                 this.player.on('volumechange', () => {
                     const currentVolume = this.player.volume();
                     localStorage.setItem('volume', currentVolume.toString());
+                });
+
+                // Integração com fullscreen do Tauri para Video.js
+                this.player.on('fullscreenchange', async () => {
+                    try {
+                        const appWindow = getCurrentWindow();
+                        const isFullscreen = this.player.isFullscreen();
+                        await appWindow.setFullscreen(isFullscreen);
+                    } catch (error) {
+                        console.error(
+                            'Erro ao alternar fullscreen do Tauri (videojs):',
+                            error
+                        );
+                    }
                 });
             }
         );
