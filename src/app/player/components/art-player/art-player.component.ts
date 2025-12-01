@@ -85,14 +85,22 @@ export class ArtPlayerComponent implements OnInit, OnDestroy, OnChanges {
 
     ngOnChanges(changes: SimpleChanges): void {
         if (changes['channel'] && !changes['channel'].firstChange) {
+            // Preserve fullscreen state before destroying player
+            const wasFullscreen = this.player?.fullscreen || false;
+            
             if (this.player) {
                 this.player.destroy();
             }
-            this.initPlayer();
+            
+            // Reset auto-play state for new episode
+            this.autoPlayPopupShown = false;
+            this.autoPlayCancelled = false;
+            
+            this.initPlayer(wasFullscreen);
         }
     }
 
-    private async initPlayer(): Promise<void> {
+    private async initPlayer(restoreFullscreen = false): Promise<void> {
         const el = this.elementRef.nativeElement.querySelector(
             '.artplayer-container'
         );
@@ -143,6 +151,24 @@ export class ArtPlayerComponent implements OnInit, OnDestroy, OnChanges {
                 },
             },
         });
+
+        // Restore fullscreen state if needed (for episode transitions)
+        if (restoreFullscreen) {
+            this.player.once('ready', async () => {
+                // Small delay to ensure player is fully initialized
+                setTimeout(async () => {
+                    if (this.player) {
+                        this.player.fullscreen = true;
+                        try {
+                            const appWindow = getCurrentWindow();
+                            await appWindow.setFullscreen(true);
+                        } catch (error) {
+                            console.error('Error restoring fullscreen:', error);
+                        }
+                    }
+                }, 100);
+            });
+        }
 
         // Emit time update events and handle auto-play next episode feature
         this.player.on('video:timeupdate', () => {
