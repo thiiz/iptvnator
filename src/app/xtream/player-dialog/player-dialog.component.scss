@@ -19,4 +19,8 @@ mat-dialog-content {
     .video-js {
         height: 500px !important;
     }
+
+    app-art-player > .artplayer-container {
+        height: 500px !important;
+    }
 }
